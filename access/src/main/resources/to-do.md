@@ -1,5 +1,5 @@
-## 🧭 ROADMAP COMPLÈTE — PROJET RBAC MULTI-TENANT
-# 📍 ÉTAT INITIAL (LÀ OÙ TU ES)
+##  ROADMAP COMPLÈTE — PROJET RBAC MULTI-TENANT
+#  ÉTAT INITIAL (LÀ OÙ TU ES) ----------(OK)
 
 ✅ Base PostgreSQL créée
 
@@ -9,9 +9,9 @@
 
 ❌ Aucun code métier encore
 
-👉 C’est exactement le bon moment pour coder.
+ C’est exactement le bon moment pour coder.
 
-# PHASE 1 — SOCLE DOMAIN (ENTITÉS JPA)
+# PHASE 1 — SOCLE DOMAIN (ENTITÉS JPA) ---------(OK)
 
 🎯 Objectif : représenter fidèlement la base, sans logique métier.
 
@@ -29,19 +29,19 @@ Toute erreur ici se propage partout
 
 🔹 Entités à créer (dans cet ordre)
 
-Tenant
+Tenant -----------(ok)
 
-AppUser
+AppUser-----------(ok)
 
-Resource
+Resource -----------(ok)
 
-Role
+Role -----------(ok)
 
-Permission
+Permission ------(ok)
 
-UserRoleResource
+UserRoleResource --------(ok)
 
-AuditLog
+AuditLog ----------(ok)
 
 👉 Aucune logique métier, uniquement :
 
@@ -53,7 +53,7 @@ relations (@ManyToOne, etc.)
 
 ⛔ Pas de @Service, pas de règles, pas de contrôles.
 
-# PHASE 2 — REPOSITORIES (ACCÈS DONNÉES)
+# PHASE 2 — REPOSITORIES (ACCÈS DONNÉES) ----------------(OK)
 
 🎯 Objectif : lire / écrire proprement, sans logique métier.
 
@@ -103,7 +103,7 @@ Le RBAC est une logique métier
 
 Les controllers ne doivent rien décider
 
-🔹 3.1 — TenantService (POINT DE DÉPART OBLIGATOIRE)
+🔹 3.1 — TenantService (POINT DE DÉPART OBLIGATOIRE) ----(ok)
 Pourquoi commencer par lui ?
 
 Parce que tout part du tenant.
@@ -122,7 +122,7 @@ une resource = un tenant
 
 📌 À FAIRE MAINTENANT, avant toute API publique.
 
-🔹 3.2 — ResourceService
+🔹 3.2 — ResourceService ----------(ok)
 
 Créer des ressources enfants
 
@@ -138,7 +138,7 @@ Activer / désactiver
 
 Assigner des rôles via RBAC
 
-🔹 3.4 — AuthorizationService (CLÉ)
+🔹 3.4 — AuthorizationService (CLÉ)  --------------(ok)
 
 🎯 Le cerveau du système.
 
