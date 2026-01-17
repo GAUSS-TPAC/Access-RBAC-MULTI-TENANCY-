@@ -1,61 +1,93 @@
 package com.yow.access.services;
 
 import com.yow.access.entities.*;
+import com.yow.access.exceptions.AccessDeniedException;
 import com.yow.access.repositories.ResourceRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-/**
- * Service responsible for resource hierarchy management.
- *
- * Author: Alan Tchapda
- * Date: 2025-12-30
- */
 @Service
 public class ResourceService {
 
     private final ResourceRepository resourceRepository;
     private final AuthorizationService authorizationService;
+    private final AuditLogService auditLogService;
 
     public ResourceService(
             ResourceRepository resourceRepository,
-            AuthorizationService authorizationService
+            AuthorizationService authorizationService,
+            AuditLogService auditLogService
     ) {
         this.resourceRepository = resourceRepository;
         this.authorizationService = authorizationService;
+        this.auditLogService = auditLogService;
     }
 
     /**
-     * Create a child resource under a parent resource.
+     * Create a child resource under a parent resource (RBAC protected).
      */
     @Transactional
     public Resource createChildResource(
             UUID actorUserId,
-            Resource parent,
+            UUID parentResourceId,
             String resourceName,
             String resourceType
     ) {
-        // 1️⃣ RBAC check
-        boolean allowed = authorizationService.hasPermission(
-                actorUserId,
-                "CREATE_RESOURCE",
-                parent
-        );
+        Resource parent =
+                resourceRepository.findById(parentResourceId)
+                        .orElseThrow(() -> new IllegalStateException("Parent resource not found"));
 
-        if (!allowed) {
-            throw new SecurityException("Permission denied: CREATE_RESOURCE");
+        // 🔐 RBAC
+        try {
+            authorizationService.checkPermission(
+                    actorUserId,
+                    parent.getId(),
+                    "RESOURCE_CREATE"
+            );
+        } catch (AccessDeniedException ex) {
+
+            auditLogService.log(
+                    parent.getTenant(),
+                    null,
+                    parent,
+                    "CREATE_RESOURCE",
+                    "RESOURCE",
+                    null,
+                    "FAILURE",
+                    ex.getMessage(),
+                    null,
+                    null
+            );
+
+            throw ex;
         }
 
-        // 2️⃣ Create resource via factory
-        Resource child = ResourceFactory.createChildResource(
-                parent,
-                resourceName,
-                resourceType
+        // 🏗️ Create resource
+        Resource child =
+                ResourceFactory.createChildResource(
+                        parent,
+                        resourceName,
+                        resourceType
+                );
+
+        resourceRepository.save(child);
+
+        // 🧾 Audit SUCCESS
+        auditLogService.log(
+                parent.getTenant(),
+                null,
+                child,
+                "CREATE_RESOURCE",
+                "RESOURCE",
+                child.getId(),
+                "SUCCESS",
+                "Resource created under parent " + parent.getId(),
+                null,
+                null
         );
 
-        // 3️⃣ Persist
-        return resourceRepository.save(child);
+        return child;
     }
 }

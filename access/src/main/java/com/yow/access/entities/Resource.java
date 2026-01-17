@@ -2,6 +2,7 @@ package com.yow.access.entities;
 
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.util.UUID;
 
 /**
  * Entity representing a hierarchical resource within a tenant scope.
@@ -16,7 +17,7 @@ public class Resource {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", updatable = false, nullable = false)
-    private Long id;
+    private UUID id;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id", nullable = false)
@@ -44,7 +45,7 @@ public class Resource {
 
     // Getters & Setters
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 

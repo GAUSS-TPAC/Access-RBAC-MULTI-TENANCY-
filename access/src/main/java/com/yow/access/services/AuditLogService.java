@@ -5,19 +5,15 @@ import com.yow.access.repositories.AuditLogRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Service responsible for audit logging.
- *
- * Author: Alan Tchapda
- * Date: 2025-12-30
- */
+import java.util.UUID;
+
 @Service
 public class AuditLogService {
 
-    private final AuditLogRepository auditLogRepository;
+    private final AuditLogRepository repository;
 
-    public AuditLogService(AuditLogRepository auditLogRepository) {
-        this.auditLogRepository = auditLogRepository;
+    public AuditLogService(AuditLogRepository repository) {
+        this.repository = repository;
     }
 
     @Transactional
@@ -27,7 +23,7 @@ public class AuditLogService {
             Resource resource,
             String action,
             String targetType,
-            Long targetId,
+            UUID targetId,
             String outcome,
             String message,
             String ipAddress,
@@ -47,7 +43,6 @@ public class AuditLogService {
                         userAgent
                 );
 
-        auditLogRepository.save(log);
+        repository.save(log);
     }
-
 }

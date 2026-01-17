@@ -1,5 +1,7 @@
 package com.yow.access.entities;
 
+import java.util.UUID;
+
 /**
  * Factory for AuditLog creation.
  */
@@ -14,7 +16,7 @@ public final class AuditLogFactory {
             Resource resource,
             String action,
             String targetType,
-            Long targetId,
+            UUID targetId,
             String outcome,
             String message,
             String ipAddress,

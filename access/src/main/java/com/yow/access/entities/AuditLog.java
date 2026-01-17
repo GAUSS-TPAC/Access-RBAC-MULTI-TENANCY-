@@ -40,7 +40,7 @@ public class AuditLog {
     private String targetType;
 
     @Column(name = "target_id")
-    private Long targetId;
+    private UUID targetId;
 
     @Column(name = "outcome", nullable = false, length = 20)
     private String outcome;
@@ -107,11 +107,11 @@ public class AuditLog {
         this.targetType = targetType;
     }
 
-    public Long getTargetId() {
+    public UUID getTargetId() {
         return targetId;
     }
 
-    public void setTargetId(Long targetId) {
+    public void setTargetId(UUID targetId) {
         this.targetId = targetId;
     }
 
