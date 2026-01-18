@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-constraints
+      author: gauss
+      changes:
+
+        # ===== UN SEUL ADMIN_TENANT PAR RESSOURCE (TENANT RACINE) =====
+        - sql:
+            sql: |
+              CREATE UNIQUE INDEX uq_one_admin_tenant
+              ON user_role_resource (resource_id)
+              WHERE role_id = 2;
+
+        # ===== UN SEUL SUPER_ADMIN GLOBAL =====
+        - sql:
+            sql: |
+              CREATE UNIQUE INDEX uq_single_super_admin
+              ON user_role_resource (role_id)
+              WHERE role_id = 1;

@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-init-schema
+      author: gauss
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/001_schema.sql
+            relativeToChangelogFile: false

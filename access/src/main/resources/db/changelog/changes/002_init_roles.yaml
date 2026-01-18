@@ -1,0 +1,69 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-init-roles
+      author: gauss
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: role
+
+      changes:
+
+        # ===== ROLES =====
+        - insert:
+            tableName: role
+            columns:
+              - column: { name: id, valueNumeric: 1 }
+              - column: { name: name, value: SUPER_ADMIN }
+              - column: { name: scope, value: GLOBAL }
+
+        - insert:
+            tableName: role
+            columns:
+              - column: { name: id, valueNumeric: 2 }
+              - column: { name: name, value: ADMIN_TENANT }
+              - column: { name: scope, value: TENANT }
+
+        - insert:
+            tableName: role
+            columns:
+              - column: { name: id, valueNumeric: 3 }
+              - column: { name: name, value: ADMIN_RESOURCE }
+              - column: { name: scope, value: RESOURCE }
+
+        - insert:
+            tableName: role
+            columns:
+              - column: { name: id, valueNumeric: 4 }
+              - column: { name: name, value: USER }
+              - column: { name: scope, value: RESOURCE }
+
+        # ===== PERMISSIONS =====
+        - insert:
+            tableName: permission
+            columns:
+              - column: { name: id, valueNumeric: 1 }
+              - column: { name: name, value: TENANT_CREATE }
+              - column: { name: description, value: Create tenant }
+
+        - insert:
+            tableName: permission
+            columns:
+              - column: { name: id, valueNumeric: 2 }
+              - column: { name: name, value: USER_MANAGE }
+              - column: { name: description, value: Create/update/delete users }
+
+        - insert:
+            tableName: permission
+            columns:
+              - column: { name: id, valueNumeric: 3 }
+              - column: { name: name, value: ROLE_ASSIGN }
+              - column: { name: description, value: Assign roles to users }
+
+        - insert:
+            tableName: permission
+            columns:
+              - column: { name: id, valueNumeric: 4 }
+              - column: { name: name, value: RESOURCE_MANAGE }
+              - column: { name: description, value: Manage resources }
