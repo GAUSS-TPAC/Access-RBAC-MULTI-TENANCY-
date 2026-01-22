@@ -1,0 +1,69 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-convert-resource-id-to-uuid-cascade
+      author: yow
+      changes:
+        # 1. Supprimer les clés étrangères qui pointent vers resource.id
+        - dropForeignKeyConstraint:
+            baseTableName: resource
+            constraintName: fk_resource_parent
+        - dropForeignKeyConstraint:
+            baseTableName: user_role_resource
+            constraintName: fk_urr_resource
+
+        # 2. Supprimer la clé primaire de resource
+        - dropPrimaryKey:
+            tableName: resource
+            constraintName: resource_pkey
+
+        # 3. Changer le type de la colonne id dans resource
+        - dropColumn:
+            tableName: resource
+            columnName: id
+        - addColumn:
+            tableName: resource
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: resource_pkey
+
+        # 4. Changer le type des colonnes liées dans les autres tables
+        # Pour resource (parent_id)
+        - dropColumn:
+            tableName: resource
+            columnName: parent_id
+        - addColumn:
+            tableName: resource
+            columns:
+              - column:
+                  name: parent_id
+                  type: UUID
+
+        # Pour user_role_resource (resource_id)
+        - dropColumn:
+            tableName: user_role_resource
+            columnName: resource_id
+        - addColumn:
+            tableName: user_role_resource
+            columns:
+              - column:
+                  name: resource_id
+                  type: UUID
+
+        # 5. Recréer les clés étrangères avec les nouveaux types UUID
+        - addForeignKeyConstraint:
+            baseTableName: resource
+            baseColumnNames: parent_id
+            constraintName: fk_resource_parent
+            referencedTableName: resource
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            baseTableName: user_role_resource
+            baseColumnNames: resource_id
+            constraintName: fk_urr_resource
+            referencedTableName: resource
+            referencedColumnNames: id

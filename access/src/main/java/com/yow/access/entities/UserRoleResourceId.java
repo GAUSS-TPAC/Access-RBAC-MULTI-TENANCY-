@@ -22,7 +22,7 @@ public class UserRoleResourceId implements Serializable {
     private Short roleId;
 
     @Column(name = "resource_id", nullable = false)
-    private Long resourceId;
+    private UUID resourceId;
 
     protected UserRoleResourceId() {
     }
@@ -43,11 +43,11 @@ public class UserRoleResourceId implements Serializable {
         this.roleId = roleId;
     }
 
-    public Long getResourceId() {
+    public UUID getResourceId() {
         return resourceId;
     }
 
-    public void setResourceId(Long resourceId) {
+    public void setResourceId(UUID resourceId) {
         this.resourceId = resourceId;
     }
 
