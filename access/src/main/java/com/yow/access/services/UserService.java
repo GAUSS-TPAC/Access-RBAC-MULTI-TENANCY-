@@ -73,7 +73,7 @@ public class UserService {
             UUID actorUserId,
             UUID targetUserId,
             Short roleId,
-            Long resourceId
+            UUID resourceId
     ) {
         // 1️⃣ RBAC check
         Resource resource = resourceRepository.findById(resourceId)

@@ -5,3 +5,5 @@ databaseChangeLog:
       file: db/changelog/changes/002_init_roles.yaml
   - include:
       file: db/changelog/changes/003_constraints.yaml
+  - include:
+      file: db/changelog/changes/004_auth_fields.yaml
