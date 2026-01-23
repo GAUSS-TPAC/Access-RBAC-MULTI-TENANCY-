@@ -1,0 +1,16 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-fix-auditlog-resource-id
+      author: yow
+      changes:
+        # 1. On supprime l'ancienne colonne resource_id (BIGINT)
+        - dropColumn:
+            tableName: audit_log
+            columnName: resource_id
+        # 2. On la recrée en type UUID
+        - addColumn:
+            tableName: audit_log
+            columns:
+              - column:
+                  name: resource_id
+                  type: UUID

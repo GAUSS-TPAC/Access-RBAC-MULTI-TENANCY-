@@ -1,0 +1,16 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-fix-auditlog-target-id
+      author: yow
+      changes:
+        # On supprime l'ancienne colonne qui est en BIGINT
+        - dropColumn:
+            tableName: audit_log
+            columnName: target_id
+        # On recrée la colonne avec le bon type UUID
+        - addColumn:
+            tableName: audit_log
+            columns:
+              - column:
+                  name: target_id
+                  type: UUID

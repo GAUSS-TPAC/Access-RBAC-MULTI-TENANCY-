@@ -6,4 +6,12 @@ databaseChangeLog:
   - include:
       file: db/changelog/changes/003_constraints.yaml
   - include:
+<<<<<<< HEAD
       file: db/changelog/changes/004_auth_fields.yaml
+=======
+      file: db/changelog/changes/audit_log.target_id.yaml
+  - include:
+      file: db/changelog/changes/audit_log.resource_id.yaml
+  - include:
+      file: db/changelog/changes/resource.id.yaml
+>>>>>>> 31eef93d5993414e50109a2fbb35a807aa924c2f

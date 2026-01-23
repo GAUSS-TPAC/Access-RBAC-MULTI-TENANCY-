@@ -63,7 +63,11 @@ public class AuthorizationService {
     }
 
     /* ===== INTERNAL RBAC ENGINE ===== */
+<<<<<<< HEAD
     public boolean hasPermission(
+=======
+    boolean hasPermission(
+>>>>>>> 31eef93d5993414e50109a2fbb35a807aa924c2f
             UUID userId,
             String permissionName,
             Resource target
