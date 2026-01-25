@@ -2,12 +2,14 @@ package com.yow.access.controllers;
 
 import com.yow.access.dto.*;
 import com.yow.access.entities.AppUser;
+import com.yow.access.repositories.UserRepository;
 import com.yow.access.services.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -15,9 +17,11 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserRepository userRepository;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, UserRepository userRepository) {
         this.authService = authService;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -95,5 +99,25 @@ public class AuthController {
                 "enabled", currentUser.isEnabled(),
                 "accountActivated", currentUser.isAccountActivated()
         ));
+    }
+
+    /**
+     * GET /api/auth/users
+     * Lister tous les utilisateurs
+     */
+    @GetMapping("/users")
+    public ResponseEntity<List<Map<String, Object>>> listUsers() {
+        List<AppUser> users = userRepository.findAll();
+        List<Map<String, Object>> response = users.stream()
+                .map(user -> Map.<String, Object>of(
+                        "id", user.getId(),
+                        "username", user.getUsername(),
+                        "email", user.getEmail(),
+                        "enabled", user.isEnabled(),
+                        "accountActivated", user.isAccountActivated(),
+                        "createdAt", user.getCreatedAt() != null ? user.getCreatedAt().toString() : ""
+                ))
+                .toList();
+        return ResponseEntity.ok(response);
     }
 }
