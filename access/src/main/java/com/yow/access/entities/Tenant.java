@@ -1,6 +1,10 @@
 package com.yow.access.entities;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -12,6 +16,8 @@ import java.util.UUID;
 
 
 @Entity
+@Builder
+@AllArgsConstructor
 @Table(name = "tenant")
 public class Tenant {
 

@@ -1,6 +1,8 @@
 package com.yow.access.entities;
 
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.Instant;
 
 /**
@@ -12,6 +14,10 @@ import java.time.Instant;
  * Date: 2025-12-30
  */
 @Entity
+@Getter
+@Setter
+@Builder
+@AllArgsConstructor
 @Table(name = "user_role_resource")
 public class UserRoleResource {
 
