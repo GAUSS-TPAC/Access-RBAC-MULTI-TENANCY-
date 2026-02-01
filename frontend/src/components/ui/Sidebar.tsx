@@ -1,4 +1,3 @@
-// src/components/Sidebar.tsx
 'use client';  // Important: this is a Client Component
 
 import { usePathname } from 'next/navigation';
@@ -80,11 +79,17 @@ export default function Sidebar() {
       </nav>
 
       <div className="border-t border-gray-700 pt-4">
-        <button className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 w-full text-left">
-          <LogOut className="h-5 w-5" />
-          Déconnexion
-        </button>
-      </div>
+  <button
+    onClick={() => {
+      localStorage.removeItem('userRole'); // Clear role
+      window.location.href = '/login';     // Redirect to login
+    }}
+    className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 w-full text-left text-red-400 hover:text-red-300"
+  >
+    <LogOut className="h-5 w-5" />
+    Déconnexion
+  </button>
+</div>
     </div>
   );
 }
