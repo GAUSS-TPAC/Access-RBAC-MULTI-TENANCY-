@@ -4,7 +4,7 @@
 🎯 Objectif : vérifier que la base + JPA se comportent exactement comme prévu.
 👉 Aucun service, aucune logique.
 
-1️⃣ TenantRepository ------------(ok)
+# 1️⃣ TenantRepository ------------(ok)
 
 créer un tenant
 
@@ -14,7 +14,7 @@ vérifier unicité (code / name)
 
 suppression tenant → pas de cascade involontaire
 
-2️⃣ AppUserRepository ------------(ok)
+# 2️⃣ AppUserRepository ------------(ok)
 
 créer un user
 
@@ -28,7 +28,7 @@ existsByUsername
 
 activationToken lookup
 
-3️⃣ ResourceRepository
+# 3️⃣ ResourceRepository
 
 créer resource racine
 
@@ -40,19 +40,19 @@ récupérer l’arbre (si méthode custom)
 
 suppression contrôlée (pas de delete sauvage)
 
-4️⃣ RoleRepository
+# 4️⃣ RoleRepository
 
 find role par id
 
 vérifier rôles système (ADMIN_TENANT, ADMIN_GLOBAL, etc.)
 
-5️⃣ PermissionRepository
+# 5️⃣ PermissionRepository
 
 récupérer permissions par nom
 
 mapping rôle → permissions
 
-6️⃣ UserRoleResourceRepository (CRITIQUE)
+# 6️⃣ UserRoleResourceRepository (CRITIQUE)
 
 assigner user + role + resource
 
@@ -62,7 +62,7 @@ récupérer rôles d’un user sur une resource
 
 récupérer permissions effectives
 
-7️⃣ AuditLogRepository
+# 7️⃣ AuditLogRepository
 
 insertion log
 
@@ -72,11 +72,11 @@ récupération par resource
 
 ordre chronologique
 
-🔹 NIVEAU 2 — TESTS SERVICE (LOGIQUE MÉTIER)
+# 🔹 NIVEAU 2 — TESTS SERVICE (LOGIQUE MÉTIER)
 
-🎯 Objectif : tester le RBAC réel, pas la base.
+# 🎯 Objectif : tester le RBAC réel, pas la base.
 
-8️⃣ TenantService ------------(ok)
+# 8️⃣ TenantService ------------(ok)
 
 créer tenant → crée resource racine
 
@@ -86,7 +86,7 @@ interdiction création tenant sans droits
 
 audit log généré
 
-9️⃣ ResourceService 
+# 9️⃣ ResourceService 
 
 créer resource enfant autorisé
 
@@ -98,7 +98,7 @@ propagation des droits (si prévue)
 
 audit log
 
-🔟 UserService ------------(ok)
+# 🔟 UserService ------------(ok)
 
 créer utilisateur
 
@@ -112,7 +112,7 @@ plusieurs rôles sur une même resource
 
 audit log sur assignation
 
-1️⃣1️⃣ AuthorizationService (LE PLUS IMPORTANT)
+# 1️⃣1️⃣ AuthorizationService (LE PLUS IMPORTANT) -----------(ok)
 
 Tests purs, isolés.
 
@@ -130,7 +130,7 @@ ADMIN_GLOBAL override total → OK
 
 👉 Ces tests doivent être rapides et nombreux.
 
-1️⃣2️⃣ RoleAssignmentService / Controller (si séparé)
+# 1️⃣2️⃣ RoleAssignmentService / Controller (si séparé)
 
 assign role → OK
 
@@ -142,11 +142,11 @@ refuser assignation cross-tenant
 
 audit log
 
-🔹 NIVEAU 3 — TESTS API (CONTROLLERS)
+# 🔹 NIVEAU 3 — TESTS API (CONTROLLERS)
 
-🎯 Objectif : vérifier que l’API expose correctement la logique, sans faille.
+# 🎯 Objectif : vérifier que l’API expose correctement la logique, sans faille.
 
-1️⃣3️⃣ AuthController
+# 1️⃣3️⃣ AuthController
 
 login valide
 
@@ -160,7 +160,7 @@ reset password token valide
 
 reset password token expiré
 
-1️⃣4️⃣ TenantController ------------(ok)
+# 1️⃣4️⃣ TenantController ------------(ok)
 
 créer tenant (autorisé)
 
@@ -168,7 +168,7 @@ refuser création (non autorisé)
 
 lister tenants visibles
 
-1️⃣5️⃣ ResourceController
+# 1️⃣5️⃣ ResourceController
 
 GET /resources/tree
 
@@ -176,7 +176,7 @@ créer resource enfant
 
 refuser accès hors scope
 
-1️⃣6️⃣ UserController ------------(ok)
+# 1️⃣6️⃣ UserController ------------(ok)
 
 créer user
 
@@ -184,7 +184,7 @@ activer / désactiver
 
 lister users selon droits
 
-1️⃣7️⃣ RoleAssignmentController
+# 1️⃣7️⃣ RoleAssignmentController
 
 assign role (autorisé)
 
@@ -194,9 +194,9 @@ remove role
 
 tentative escalade → REFUS
 
-🔹 NIVEAU 4 — TESTS SÉCURITÉ (NON NÉGOCIABLE)
+# 🔹 NIVEAU 4 — TESTS SÉCURITÉ (NON NÉGOCIABLE)
 
-🎯 Objectif : attaquer ton système avant les autres.
+# 🎯 Objectif : attaquer ton système avant les autres.
 
 accès API sans token → 401
 
@@ -210,9 +210,9 @@ cross-tenant access → BLOQUÉ
 
 double submit (idempotence)
 
-🔹 NIVEAU 5 — TESTS DE COHÉRENCE GLOBALE
+# 🔹 NIVEAU 5 — TESTS DE COHÉRENCE GLOBALE
 
-🎯 Objectif : valider le système complet.
+# 🎯 Objectif : valider le système complet.
 
 scénario réel :
 
@@ -230,7 +230,7 @@ audit log complet du scénario
 
 rollback transaction en cas d’erreur
 
-🧠 ORDRE STRICT D’EXÉCUTION
+# 🧠 ORDRE STRICT D’EXÉCUTION
 
 1️⃣ Repositories
 2️⃣ AuthorizationService

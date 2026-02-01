@@ -7,8 +7,7 @@ import com.yow.access.repositories.ResourceRepository;
 import com.yow.access.repositories.UserRoleResourceRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class AuthorizationService {
@@ -26,6 +25,8 @@ public class AuthorizationService {
 
     /**
      * RBAC check on a specific resource (hierarchy-aware).
+     * @throws AccessDeniedException if user lacks the permission
+     * @throws IllegalStateException if resource not found
      */
     public void checkPermission(
             UUID userId,
@@ -41,21 +42,18 @@ public class AuthorizationService {
     }
 
     /**
-     * RBAC check without resource scope (SYSTEM / GLOBAL).
+     * RBAC check without resource scope (SYSTEM / GLOBAL permissions).
+     * @throws AccessDeniedException if user lacks the permission
      */
     public void checkGlobalPermission(
             UUID userId,
             String permissionName
     ) {
-        boolean allowed =
-                urrRepository.findAllByUserId(userId)
+        boolean allowed = urrRepository.findAllByUserId(userId)
+                .stream()
+                .anyMatch(urr -> urr.getRole().getPermissions()
                         .stream()
-                        .anyMatch(urr ->
-                                urr.getRole()
-                                        .getPermissions()
-                                        .stream()
-                                        .anyMatch(p -> p.getName().equals(permissionName))
-                        );
+                        .anyMatch(p -> p.getName().equals(permissionName)));
 
         if (!allowed) {
             throw new AccessDeniedException("Permission denied: " + permissionName);
@@ -63,35 +61,60 @@ public class AuthorizationService {
     }
 
     /* ===== INTERNAL RBAC ENGINE ===== */
+    /**
+     * Core RBAC permission check with hierarchy inheritance.
+     * Walks up the resource tree until a matching permission is found.
+     * Protected against circular references.
+     */
     public boolean hasPermission(
             UUID userId,
             String permissionName,
             Resource target
     ) {
-        List<UserRoleResource> bindings =
-                urrRepository.findAllByUserId(userId);
+        // Early returns for invalid inputs
+        if (target == null) {
+            return false;
+        }
+
+        List<UserRoleResource> bindings = urrRepository.findAllByUserId(userId);
+
+        // No bindings = no permissions
+        if (bindings == null || bindings.isEmpty()) {
+            return false;
+        }
 
         Resource current = target;
+        Set<UUID> visitedResources = new HashSet<>(); // Anti-loop protection
 
+        // Walk up the resource hierarchy
         while (current != null) {
-            for (UserRoleResource urr : bindings) {
+            // Detect and break circular references
+            if (visitedResources.contains(current.getId())) {
+                break; // Circular reference detected
+            }
+            visitedResources.add(current.getId());
 
+            // Check all bindings for current resource level
+            for (UserRoleResource urr : bindings) {
+                // Skip bindings for different resources
                 if (!urr.getResource().getId().equals(current.getId())) {
                     continue;
                 }
 
-                boolean allowed =
-                        urr.getRole()
-                                .getPermissions()
-                                .stream()
-                                .anyMatch(p -> p.getName().equals(permissionName));
+                // Check if role has the required permission
+                boolean hasPermission = urr.getRole().getPermissions()
+                        .stream()
+                        .anyMatch(p -> p.getName().equals(permissionName));
 
-                if (allowed) {
-                    return true;
+                if (hasPermission) {
+                    return true; // Permission granted
                 }
             }
+
+            // Move up to parent resource
             current = current.getParent();
         }
-        return false;
+
+        return false; // No matching permission found in hierarchy
     }
 }
