@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import CreateOrganizationTab from '@/components/tenants/CreateOrganizationTab';
+import CreateOrganizationTab from '@/components/CreateOrganizationTab';
 
 export default function LoginPage() {
   const router = useRouter();

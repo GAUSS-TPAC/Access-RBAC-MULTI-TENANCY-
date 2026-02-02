@@ -59,9 +59,16 @@ export default function CommunityLayout({
                   MD
                 </div>
               </div>
-              <button className="text-gray-600 hover:text-gray-900">
-                <LogOut className="h-5 w-5" />
-              </button>
+              <button
+  onClick={() => {
+    localStorage.removeItem('userRole'); // Clear stored role
+    window.location.href = '/login';     // Full redirect to login page
+  }}
+  className="text-gray-600 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100 transition"
+  title="Déconnexion"
+>
+  <LogOut className="h-5 w-5" />
+</button>
             </div>
           </div>
         </div>
