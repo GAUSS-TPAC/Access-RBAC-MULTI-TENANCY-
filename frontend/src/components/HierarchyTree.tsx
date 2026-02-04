@@ -2,9 +2,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Building2, Users, Plus, Loader2, AlertCircle } from 'lucide-react';
+import { Building2, Users, Plus, Loader2, AlertCircle, Trash2, TreePine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { api } from '@/services/api';
+import MoveResourceModal from './MoveResourceModal';
 
 // Interface pour les ressources du backend
 interface ResourceTree {
@@ -48,11 +49,13 @@ function resourceToDepartment(resource: ResourceTree): Department {
 function DepartmentNode({
   dept,
   level = 0,
-  onCreateSubDepartment
+  onCreateSubDepartment,
+  onMove
 }: {
   dept: Department;
   level?: number;
   onCreateSubDepartment: (parent: Department) => void;
+  onMove: (dept: Department) => void;
 }) {
   return (
     <div className={`${level > 0 ? 'ml-8 border-l-2 border-gray-200 pl-6' : ''}`}>
@@ -70,14 +73,42 @@ function DepartmentNode({
             )}
           </div>
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => onCreateSubDepartment(dept)}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Sous-département
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-gray-500 hover:text-blue-600"
+            title="Déplacer cette ressource"
+            onClick={() => onMove(dept)}
+          >
+            <TreePine className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-gray-500 hover:text-red-600"
+            onClick={async () => {
+              if (confirm(`Êtes-vous sûr de vouloir supprimer ${dept.name} ?`)) {
+                try {
+                  await api.delete(`/api/resources/${dept.id}`);
+                  window.location.reload();
+                } catch (err: any) {
+                  alert(err.message || "Erreur lors de la suppression");
+                }
+              }
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onCreateSubDepartment(dept)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Sous-département
+          </Button>
+        </div>
       </div>
 
       {dept.children.length > 0 && (
@@ -88,6 +119,7 @@ function DepartmentNode({
               dept={child}
               level={level + 1}
               onCreateSubDepartment={onCreateSubDepartment}
+              onMove={onMove}
             />
           ))}
         </div>
@@ -100,6 +132,13 @@ export default function HierarchyTree({ onCreateSubDepartment }: HierarchyTreePr
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [moveModalOpen, setMoveModalOpen] = useState(false);
+  const [resourceToMove, setResourceToMove] = useState<{ id: string; name: string } | null>(null);
+
+  const handleMoveClick = (dept: Department) => {
+    setResourceToMove({ id: dept.id, name: dept.name });
+    setMoveModalOpen(true);
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -173,8 +212,15 @@ export default function HierarchyTree({ onCreateSubDepartment }: HierarchyTreePr
           key={dept.id}
           dept={dept}
           onCreateSubDepartment={onCreateSubDepartment}
+          onMove={handleMoveClick}
         />
       ))}
+
+      <MoveResourceModal
+        open={moveModalOpen}
+        onOpenChange={setMoveModalOpen}
+        resourceToMove={resourceToMove}
+      />
     </div>
   );
 }

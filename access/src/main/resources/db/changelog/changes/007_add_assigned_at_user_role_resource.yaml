@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-assigned-at-to-user-role-resource
+      author: gauss
+      changes:
+        - addColumn:
+            tableName: user_role_resource
+            columns:
+              - column:
+                  name: assigned_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false

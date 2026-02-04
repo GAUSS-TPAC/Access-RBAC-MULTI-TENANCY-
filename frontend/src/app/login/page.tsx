@@ -1,289 +1,285 @@
-// src/app/login/page.tsx
 'use client';
 
 import { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Building2, Lock, Mail, User, Loader2, CheckCircle2, ShieldCheck, ArrowRight } from 'lucide-react';
 import { api } from '@/services/api';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
 
-  // Login form state
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
+    // Login state
+    const [loginEmail, setLoginEmail] = useState('');
+    const [loginPassword, setLoginPassword] = useState('');
 
-  // Signup form state
-  const [orgName, setOrgName] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+    // Signup state
+    const [signupEmail, setSignupEmail] = useState('');
+    const [signupPassword, setSignupPassword] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [orgName, setOrgName] = useState('');
 
-  // Real login with backend API
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError(null);
 
-    try {
-      const response = await api.post('/api/auth/login', {
-        email: loginEmail,
-        password: loginPassword,
-      });
+        try {
+            const response = await api.post('/api/auth/login', {
+                email: loginEmail,
+                password: loginPassword,
+            });
 
-      const { token, userId, email, username, roles } = response.data;
+            const { token, userId, email, username, roles } = response.data;
 
-      // Store token and user info
-      localStorage.setItem('access_token', token);
-      localStorage.setItem('user_id', userId);
-      localStorage.setItem('user_email', email);
-      localStorage.setItem('user_name', username);
+            // Stockage local
+            localStorage.setItem('access_token', token);
+            localStorage.setItem('user_id', userId);
+            localStorage.setItem('user_email', email);
+            localStorage.setItem('user_name', username);
 
-      // Determine initial role context
-      // Note: In a real multi-tenant app, the user might have different roles per tenant.
-      // Here we set a "global" session role for the UI.
-      let userRole = 'user';
-      if (roles && Array.isArray(roles) && roles.includes('ADMIN')) {
-        userRole = 'admin';
-      }
-      localStorage.setItem('userRole', userRole);
+            // Détermination du rôle pour l'interface
+            let userRole = 'user';
+            if (roles && Array.isArray(roles)) {
+                if (roles.includes('ADMIN')) {
+                    userRole = 'super_admin';
+                } else if (roles.includes('TENANT_ADMIN')) {
+                    userRole = 'tenant_admin';
+                }
+            }
+            localStorage.setItem('userRole', userRole);
 
-      // Redirect to dashboard
-      router.push('/dashboard');
-    } catch (err: any) {
-      console.error('Login error:', err);
+            router.push('/dashboard');
+        } catch (err: any) {
+            console.error('Login error:', err);
+            setError(err?.message || 'Email ou mot de passe incorrect');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-      const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        'Email ou mot de passe incorrect';
-      setError(message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const handleSignup = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError(null);
 
-  // Signup - Create organization
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+        try {
+            const response = await api.post('/api/auth/register-tenant', {
+                email: signupEmail,
+                password: signupPassword,
+                firstName,
+                lastName,
+                organizationName: orgName,
+            });
 
-    if (signupPassword !== confirmPassword) {
-      setError('Les mots de passe ne correspondent pas');
-      setIsLoading(false);
-      return;
-    }
+            const { token, userId, email, username, roles } = response.data;
 
-    try {
-      const response = await api.post('/api/auth/register-tenant', {
-        email: signupEmail,
-        password: signupPassword,
-        firstName: firstName,
-        lastName: lastName,
-        organizationName: orgName
-      });
+            // Stockage local
+            localStorage.setItem('access_token', token);
+            localStorage.setItem('user_id', userId);
+            localStorage.setItem('user_email', email);
+            localStorage.setItem('user_name', username);
 
-      const { token, userId, email, username, roles } = response.data;
+            // Pour un nouveau tenant, c'est forcément un admin de tenant
+            localStorage.setItem('userRole', 'tenant_admin');
 
-      // Store token and user info
-      localStorage.setItem('access_token', token);
-      localStorage.setItem('user_id', userId);
-      localStorage.setItem('user_email', email);
-      localStorage.setItem('user_name', username);
+            setSuccess('Organisation créée avec succès ! redirection...');
 
-      // Set role (Admin since they created the tenant)
-      let userRole = 'user';
-      if (roles && Array.isArray(roles) && roles.includes('ADMIN')) {
-        userRole = 'admin';
-      }
-      localStorage.setItem('userRole', userRole);
+            // Laisser le temps de voir le message de succès
+            setTimeout(() => {
+                router.push('/dashboard');
+            }, 1500);
 
-      // Redirect to dashboard
-      router.push('/dashboard');
-    } catch (err: any) {
-      console.error('Signup error:', err);
-      const message = err?.message || 'Erreur lors de la création de l\'organisation';
-      setError(message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        } catch (err: any) {
+            console.error('Signup error:', err);
+            setError(err?.message || 'Erreur lors de la création de l\'organisation');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
-      <Card className="w-full max-w-lg shadow-xl">
-        <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold">Gestionnaire de Communauté</CardTitle>
-          <CardDescription className="text-lg mt-2">
-            Plateforme multi-tenant pour organisations et équipes
-          </CardDescription>
-        </CardHeader>
+    return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+            <div className="max-w-md w-full space-y-8">
+                <div className="text-center">
+                    <div className="mx-auto h-16 w-16 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200 mb-4">
+                        <ShieldCheck className="h-10 w-10 text-white" />
+                    </div>
+                    <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">YowAccess</h1>
+                    <p className="mt-2 text-slate-600">Système de Gestion des Accès Multi-Tenant</p>
+                </div>
 
-        <CardContent>
-          {error && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-              {error}
+                <Card className="border-none shadow-xl bg-white/80 backdrop-blur-sm">
+                    <CardHeader className="pb-0">
+                        <Tabs defaultValue="login" className="w-full">
+                            <TabsList className="grid w-full grid-cols-2 mb-4 h-12">
+                                <TabsTrigger value="login" className="text-sm font-medium">Connexion</TabsTrigger>
+                                <TabsTrigger value="signup" className="text-sm font-medium">Créer une organisation</TabsTrigger>
+                            </TabsList>
+
+                            {error && (
+                                <Alert variant="destructive" className="mb-4">
+                                    <AlertDescription>{error}</AlertDescription>
+                                </Alert>
+                            )}
+
+                            {success && (
+                                <Alert className="mb-4 bg-green-50 border-green-200 text-green-800">
+                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                    <AlertDescription>{success}</AlertDescription>
+                                </Alert>
+                            )}
+
+                            <TabsContent value="login" className="mt-0">
+                                <CardHeader className="px-0 pt-2 pb-6">
+                                    <CardTitle className="text-xl">Bon retour</CardTitle>
+                                    <CardDescription>Connectez-vous à votre espace de travail</CardDescription>
+                                </CardHeader>
+                                <form onSubmit={handleLogin} className="space-y-4 pb-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="email">Email professionnel</Label>
+                                        <div className="relative">
+                                            <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                            <Input
+                                                id="email"
+                                                type="email"
+                                                placeholder="nom@entreprise.com"
+                                                className="pl-10 h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                                                value={loginEmail}
+                                                onChange={(e) => setLoginEmail(e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="password">Mot de passe</Label>
+                                            <Button variant="link" className="px-0 font-normal text-xs text-blue-600" type="button">
+                                                Mot de passe oublié ?
+                                            </Button>
+                                        </div>
+                                        <div className="relative">
+                                            <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                            <Input
+                                                id="password"
+                                                type="password"
+                                                placeholder="••••••••"
+                                                className="pl-10 h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                                                value={loginPassword}
+                                                onChange={(e) => setLoginPassword(e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <Button className="w-full h-11 bg-blue-600 hover:bg-blue-700 transition-all font-semibold" disabled={isLoading}>
+                                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Se connecter'}
+                                    </Button>
+                                </form>
+                            </TabsContent>
+
+                            <TabsContent value="signup" className="mt-0">
+                                <CardHeader className="px-0 pt-2 pb-6">
+                                    <CardTitle className="text-xl">Nouvelle Organisation</CardTitle>
+                                    <CardDescription>Déployez YowAccess pour votre entreprise</CardDescription>
+                                </CardHeader>
+                                <form onSubmit={handleSignup} className="space-y-4 pb-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="firstName">Prénom</Label>
+                                            <Input
+                                                id="firstName"
+                                                placeholder="Jean"
+                                                className="h-11 border-slate-200"
+                                                value={firstName}
+                                                onChange={(e) => setFirstName(e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="lastName">Nom</Label>
+                                            <Input
+                                                id="lastName"
+                                                placeholder="Dupont"
+                                                className="h-11 border-slate-200"
+                                                value={lastName}
+                                                onChange={(e) => setLastName(e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="orgName">Nom de l'organisation</Label>
+                                        <div className="relative">
+                                            <Building2 className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                            <Input
+                                                id="orgName"
+                                                placeholder="ACME Corp"
+                                                className="pl-10 h-11 border-slate-200"
+                                                value={orgName}
+                                                onChange={(e) => setOrgName(e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="signup-email">Email professionnel</Label>
+                                        <div className="relative">
+                                            <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                            <Input
+                                                id="signup-email"
+                                                type="email"
+                                                placeholder="jean.dupont@acme.com"
+                                                className="pl-10 h-11 border-slate-200"
+                                                value={signupEmail}
+                                                onChange={(e) => setSignupEmail(e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="signup-password">Mot de passe</Label>
+                                        <div className="relative">
+                                            <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                            <Input
+                                                id="signup-password"
+                                                type="password"
+                                                placeholder="Min. 8 caractères"
+                                                className="pl-10 h-11 border-slate-200"
+                                                value={signupPassword}
+                                                onChange={(e) => setSignupPassword(e.target.value)}
+                                                required
+                                                minLength={8}
+                                            />
+                                        </div>
+                                    </div>
+                                    <Button className="w-full h-11 bg-blue-600 hover:bg-blue-700 transition-all font-semibold flex items-center justify-center gap-2" disabled={isLoading}>
+                                        {isLoading ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <>
+                                                Créer mon organisation <ArrowRight className="h-4 w-4" />
+                                            </>
+                                        )}
+                                    </Button>
+                                    <p className="text-[10px] text-center text-slate-500 mt-4 leading-relaxed">
+                                        En créant un compte, vous acceptez nos conditions générales d'utilisation
+                                        et notre politique de confidentialité.
+                                    </p>
+                                </form>
+                            </TabsContent>
+                        </Tabs>
+                    </CardHeader>
+                </Card>
             </div>
-          )}
-
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Se connecter</TabsTrigger>
-              <TabsTrigger value="signup">Créer une organisation</TabsTrigger>
-            </TabsList>
-
-            {/* Sign In Tab */}
-            <TabsContent value="signin" className="space-y-6 mt-6">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="grid gap-4">
-                  <div>
-                    <Label htmlFor="email-login">Email</Label>
-                    <Input
-                      id="email-login"
-                      type="email"
-                      placeholder="admin@example.com"
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="password-login">Mot de passe</Label>
-                    <Input
-                      id="password-login"
-                      type="password"
-                      placeholder="Admin123!"
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Connexion...' : 'Se connecter'}
-                </Button>
-
-                {/* Test credentials hint */}
-                <div className="text-center text-sm text-gray-500 mt-4 p-3 bg-gray-50 rounded">
-                  <p className="font-medium">Identifiants de test :</p>
-                  <p>Email: admin@example.com</p>
-                  <p>Mot de passe: Admin123!</p>
-                </div>
-              </form>
-            </TabsContent>
-
-            {/* Signup Tab - Admin creates organization */}
-            <TabsContent value="signup" className="space-y-6 mt-6">
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="text-center mb-4">
-                  <p className="text-sm text-gray-600">
-                    Créez votre organisation — vous serez l'administrateur principal
-                  </p>
-                </div>
-
-                <div className="grid gap-4">
-                  <div>
-                    <Label htmlFor="org-name">Nom de l'organisation</Label>
-                    <Input
-                      id="org-name"
-                      placeholder="Ma Super Entreprise"
-                      value={orgName}
-                      onChange={(e) => setOrgName(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="first-name">Prénom</Label>
-                      <Input
-                        id="first-name"
-                        placeholder="Jean"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="last-name">Nom</Label>
-                      <Input
-                        id="last-name"
-                        placeholder="Dupont"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="email-signup">Email</Label>
-                    <Input
-                      id="email-signup"
-                      type="email"
-                      placeholder="jean.dupont@exemple.com"
-                      value={signupEmail}
-                      onChange={(e) => setSignupEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="password-signup">Mot de passe</Label>
-                      <Input
-                        id="password-signup"
-                        type="password"
-                        value={signupPassword}
-                        onChange={(e) => setSignupPassword(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="confirm-password">Confirmer</Label>
-                      <Input
-                        id="confirm-password"
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Création...' : 'Créer mon organisation'}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-    </div>
-  );
+        </div>
+    );
 }

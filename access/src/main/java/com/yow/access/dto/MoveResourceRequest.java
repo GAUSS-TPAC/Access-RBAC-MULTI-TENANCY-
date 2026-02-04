@@ -1,7 +1,6 @@
 package com.yow.access.dto;
 
 import jakarta.validation.constraints.NotNull;
-
 import java.util.UUID;
 
 public class MoveResourceRequest {
@@ -17,5 +16,9 @@ public class MoveResourceRequest {
 
     public UUID getNewParentId() {
         return newParentId;
+    }
+
+    public void setNewParentId(UUID newParentId) {
+        this.newParentId = newParentId;
     }
 }

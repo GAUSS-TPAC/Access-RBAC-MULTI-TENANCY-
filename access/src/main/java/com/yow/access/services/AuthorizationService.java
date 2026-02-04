@@ -83,6 +83,15 @@ public class AuthorizationService {
             return false;
         }
 
+        // Walks up the resource tree until a matching permission is found.
+        // Protected against circular references.
+        // ADMIN role has full access.
+        for (UserRoleResource urr : bindings) {
+            if (urr.getRole().getName().equals("ADMIN")) {
+                return true;
+            }
+        }
+
         Resource current = target;
         Set<UUID> visitedResources = new HashSet<>(); // Anti-loop protection
 

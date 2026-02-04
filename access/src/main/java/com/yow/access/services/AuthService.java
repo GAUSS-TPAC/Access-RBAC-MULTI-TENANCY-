@@ -4,13 +4,9 @@ import com.yow.access.config.email.EmailService;
 import com.yow.access.config.security.jwt.JwtService;
 import com.yow.access.dto.*;
 import com.yow.access.entities.AppUser;
-import com.yow.access.repositories.UserRepository;
-import com.yow.access.repositories.TenantRepository;
-import com.yow.access.repositories.ResourceRepository;
-import com.yow.access.repositories.RoleRepository;
-import com.yow.access.repositories.UserRoleResourceRepository;
-import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
+import com.yow.access.repositories.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,10 +14,43 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
+import java.util.List;
+import java.util.Collections;
+import java.util.stream.Collectors;
 
-@Slf4j
 @Service
 public class AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+
+    private final UserRepository userRepository;
+    private final TenantRepository tenantRepository;
+    private final ResourceRepository resourceRepository;
+    private final RoleRepository roleRepository;
+    private final UserRoleResourceRepository userRoleResourceRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final EmailService emailService;
+
+    public AuthService(
+            UserRepository userRepository,
+            TenantRepository tenantRepository,
+            ResourceRepository resourceRepository,
+            RoleRepository roleRepository,
+            UserRoleResourceRepository userRoleResourceRepository,
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService,
+            EmailService emailService
+    ) {
+        this.userRepository = userRepository;
+        this.tenantRepository = tenantRepository;
+        this.resourceRepository = resourceRepository;
+        this.roleRepository = roleRepository;
+        this.userRoleResourceRepository = userRoleResourceRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
+        this.emailService = emailService;
+    }
 
     private static final String GENERIC_AUTH_ERROR = "Email ou mot de passe incorrect";
     private static final int ACTIVATION_TOKEN_EXPIRY_HOURS = 24;
@@ -40,11 +69,10 @@ public class AuthService {
             throw new IllegalArgumentException("Un utilisateur avec cet email existe déjà.");
         }
 
-        // On génère un code unique pour le tenant basé sur le nom (simplifié pour l'exemple)
+        // On génère un code unique pour le tenant basé sur le nom
         String tenantCode = request.getOrganizationName().toUpperCase().replaceAll("[^A-Z0-9]", "_");
         if (tenantCode.length() > 20) tenantCode = tenantCode.substring(0, 20);
         
-        // S'assurer que le code est unique (ajouter suffixe si besoin)
         int suffix = 1;
         String originalCode = tenantCode;
         while (tenantRepository.existsByCode(tenantCode)) {
@@ -53,11 +81,11 @@ public class AuthService {
 
         // 2. Création de l'utilisateur Admin
         AppUser adminUser = new AppUser();
-        adminUser.setUsername(request.getEmail()); // Username = Email par défaut pour simplicité
+        adminUser.setUsername(request.getEmail());
         adminUser.setEmail(request.getEmail());
         adminUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         adminUser.setEnabled(true);
-        adminUser.setAccountActivated(true); // Compte activé directement
+        adminUser.setAccountActivated(true);
         adminUser.setMustChangePassword(false);
         adminUser.setCreatedAt(Instant.now());
         
@@ -75,7 +103,7 @@ public class AuthService {
         com.yow.access.entities.Resource rootResource = com.yow.access.entities.ResourceFactory.createRootResource(tenant, request.getOrganizationName());
         resourceRepository.save(rootResource);
 
-        // 5. Assignation du Rôle ADMIN
+        // 5. Assignation du Rôle TENANT_ADMIN
         com.yow.access.entities.Role adminRole = roleRepository.findByName("TENANT_ADMIN")
                 .orElseThrow(() -> new IllegalStateException("Le rôle TENANT_ADMIN est introuvable en base."));
 
@@ -83,8 +111,7 @@ public class AuthService {
         userRoleResourceRepository.save(urr);
 
         // 6. Génération Token et Réponse
-        // L'admin a le rôle ADMIN (global pour le contexte tenant)
-        java.util.List<String> roles = java.util.Collections.singletonList("ADMIN");
+        List<String> roles = Collections.singletonList("TENANT_ADMIN");
         String token = jwtService.generateToken(adminUser.getId(), adminUser.getEmail(), roles);
 
         log.info("Tenant '{}' créé avec succès par {}", tenant.getName(), adminUser.getEmail());
@@ -97,35 +124,6 @@ public class AuthService {
                 .roles(roles)
                 .mustChangePassword(false)
                 .build();
-    }
-
-    private final UserRepository userRepository;
-    private final com.yow.access.repositories.UserRoleResourceRepository userRoleResourceRepository;
-    private final com.yow.access.repositories.TenantRepository tenantRepository;
-    private final com.yow.access.repositories.ResourceRepository resourceRepository;
-    private final com.yow.access.repositories.RoleRepository roleRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
-    private final EmailService emailService;
-
-    public AuthService(
-            UserRepository userRepository,
-            com.yow.access.repositories.UserRoleResourceRepository userRoleResourceRepository,
-            com.yow.access.repositories.TenantRepository tenantRepository,
-            com.yow.access.repositories.ResourceRepository resourceRepository,
-            com.yow.access.repositories.RoleRepository roleRepository,
-            PasswordEncoder passwordEncoder,
-            JwtService jwtService,
-            EmailService emailService
-    ) {
-        this.userRepository = userRepository;
-        this.userRoleResourceRepository = userRoleResourceRepository;
-        this.tenantRepository = tenantRepository;
-        this.resourceRepository = resourceRepository;
-        this.roleRepository = roleRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtService = jwtService;
-        this.emailService = emailService;
     }
 
     /**
@@ -143,25 +141,23 @@ public class AuthService {
 
         validateUserForLogin(user, request.getPassword());
 
-        String token = jwtService.generateToken(user.getId(), user.getEmail(), java.util.Collections.emptyList());
-        log.info("Connexion réussie pour l'utilisateur: {}", user.getEmail());
-
-
         // Récupérer les rôles de l'utilisateur
-        java.util.List<String> roles = userRoleResourceRepository.findAllByUserId(user.getId())
+        List<String> roles = userRoleResourceRepository.findAllByUserId(user.getId())
                 .stream()
                 .map(urr -> urr.getRole().getName())
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
 
         // Hack temporaire pour l'admin par défaut s'il n'a pas de rôle en base
         if (roles.isEmpty() && (user.getUsername().equals("admin") || user.getEmail().equals("admin@example.com"))) {
             roles.add("ADMIN");
         }
         
-        // Hack temporaire pour l'utilisateur de test s'il n'a pas de rôle en base
-         if (roles.isEmpty() && (user.getUsername().equals("testuser") || user.getEmail().equals("test@yow.com"))) {
+        if (roles.isEmpty() && (user.getUsername().equals("testuser") || user.getEmail().equals("test@yow.com"))) {
             roles.add("USER");
         }
+
+        String token = jwtService.generateToken(user.getId(), user.getEmail(), roles);
+        log.info("Connexion réussie pour l'utilisateur: {}", user.getEmail());
 
         return AuthResponse.builder()
                 .token(token)
@@ -177,7 +173,6 @@ public class AuthService {
      * Valide l'utilisateur pour la connexion
      */
     private void validateUserForLogin(AppUser user, String providedPassword) {
-        // Vérifier l'état du compte
         if (!user.isAccountActivated()) {
             log.warn("Tentative de connexion avec compte non activé: {}", user.getEmail());
             throw new IllegalStateException("Votre compte n'est pas encore activé. Veuillez vérifier vos emails.");
@@ -188,7 +183,6 @@ public class AuthService {
             throw new IllegalStateException("Votre compte a été désactivé. Contactez l'administrateur.");
         }
 
-        // Vérifier le mot de passe
         if (!passwordEncoder.matches(providedPassword, user.getPasswordHash())) {
             log.warn("Mot de passe incorrect pour l'utilisateur: {}", user.getEmail());
             throw new IllegalArgumentException(GENERIC_AUTH_ERROR);
@@ -201,34 +195,23 @@ public class AuthService {
     @Transactional
     public AppUser createUser(CreateUserRequest request, AppUser createdBy) {
         log.debug("Création d'un nouvel utilisateur: {}", request.getEmail());
-
         validateNewUser(request);
-
         AppUser user = buildNewUser(request, createdBy);
         userRepository.save(user);
-
         sendActivationEmail(user);
-
         log.info("Utilisateur créé avec succès: {} (ID: {})", user.getEmail(), user.getId());
         return user;
     }
 
-    /**
-     * Valide les données d'un nouvel utilisateur
-     */
     private void validateNewUser(CreateUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("L'adresse email " + request.getEmail() + " est déjà utilisée.");
         }
-
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new IllegalArgumentException("Le nom d'utilisateur " + request.getUsername() + " est déjà utilisé.");
         }
     }
 
-    /**
-     * Construit un nouvel utilisateur
-     */
     private AppUser buildNewUser(CreateUserRequest request, AppUser createdBy) {
         AppUser user = new AppUser();
         user.setUsername(request.getUsername());
@@ -239,225 +222,89 @@ public class AuthService {
         user.setCreatedBy(createdBy);
         user.setCreatedAt(Instant.now());
         user.setMustChangePassword(false);
-
-        // Générer le token d'activation
         String activationToken = generateActivationToken();
         user.setActivationToken(activationToken);
         user.setActivationTokenExpiry(Instant.now().plus(ACTIVATION_TOKEN_EXPIRY_HOURS, ChronoUnit.HOURS));
-
         return user;
     }
 
-    /**
-     * Envoie l'email d'activation
-     */
     private void sendActivationEmail(AppUser user) {
         try {
-            emailService.sendActivationEmail(
-                    user.getEmail(),
-                    user.getUsername(),
-                    user.getActivationToken()
-            );
+            emailService.sendActivationEmail(user.getEmail(), user.getUsername(), user.getActivationToken());
             log.debug("Email d'activation envoyé à: {}", user.getEmail());
         } catch (Exception e) {
-            log.error("Erreur lors de l'envoi de l'email d'activation à {}: {}",
-                    user.getEmail(), e.getMessage(), e);
-            // On ne bloque pas la création de l'utilisateur, l'admin peut renvoyer l'email
+            log.error("Erreur lors de l'envoi de l'email d'activation à {}: {}", user.getEmail(), e.getMessage());
         }
     }
 
-    /**
-     * Active un compte utilisateur avec un token d'activation
-     */
     @Transactional
     public AuthResponse activateAccount(ActivateAccountRequest request) {
         log.debug("Tentative d'activation de compte avec token: {}", maskToken(request.getToken()));
-
-        validatePasswordConfirmation(request);
-
+        if (!request.getPassword().equals(request.getConfirmPassword())) {
+            throw new IllegalArgumentException("Les mots de passe ne correspondent pas.");
+        }
         AppUser user = userRepository.findByActivationToken(request.getToken())
-                .orElseThrow(() -> {
-                    log.warn("Tentative d'activation avec token invalide: {}", maskToken(request.getToken()));
-                    return new IllegalArgumentException("Le lien d'activation est invalide ou a expiré.");
-                });
-
-        validateActivationToken(user);
-
-        activateUserAccount(user, request.getPassword());
-
-        String token = jwtService.generateToken(user.getId(), user.getEmail(), java.util.Collections.emptyList());
-        log.info("Compte activé avec succès: {}", user.getEmail());
-
+                .orElseThrow(() -> new IllegalArgumentException("Le lien d'activation est invalide ou a expiré."));
+        if (user.getActivationTokenExpiry().isBefore(Instant.now())) {
+            throw new IllegalStateException("Le lien d'activation a expiré.");
+        }
+        if (user.isAccountActivated()) {
+            throw new IllegalStateException("Ce compte est déjà activé.");
+        }
+        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        user.setAccountActivated(true);
+        user.setActivationToken(null);
+        user.setActivationTokenExpiry(null);
+        userRepository.save(user);
+        
+        String token = jwtService.generateToken(user.getId(), user.getEmail(), Collections.emptyList());
         return AuthResponse.builder()
                 .token(token)
                 .userId(user.getId())
                 .email(user.getEmail())
                 .username(user.getUsername())
-                .roles(java.util.Collections.emptyList()) // Pas de rôle par défaut pour un nouvel utilisateur activé
+                .roles(Collections.emptyList())
                 .mustChangePassword(false)
                 .build();
     }
 
-    /**
-     * Valide la confirmation du mot de passe
-     */
-    private void validatePasswordConfirmation(ActivateAccountRequest request) {
-        if (!request.getPassword().equals(request.getConfirmPassword())) {
-            throw new IllegalArgumentException("Les mots de passe ne correspondent pas.");
-        }
-    }
-
-    /**
-     * Valide le token d'activation
-     */
-    private void validateActivationToken(AppUser user) {
-        if (user.getActivationTokenExpiry().isBefore(Instant.now())) {
-            log.warn("Token d'activation expiré pour l'utilisateur: {}", user.getEmail());
-            throw new IllegalStateException("Le lien d'activation a expiré. Veuillez demander un nouveau lien.");
-        }
-
-        if (user.isAccountActivated()) {
-            log.warn("Tentative d'activation d'un compte déjà activé: {}", user.getEmail());
-            throw new IllegalStateException("Ce compte est déjà activé.");
-        }
-    }
-
-    /**
-     * Active le compte utilisateur et définit le mot de passe
-     */
-    private void activateUserAccount(AppUser user, String password) {
-        user.setPasswordHash(passwordEncoder.encode(password));
-        user.setAccountActivated(true);
-        user.setActivationToken(null);
-        user.setActivationTokenExpiry(null);
-        user.setMustChangePassword(false);
-
-        userRepository.save(user);
-    }
-
-    /**
-     * Demande la réinitialisation du mot de passe
-     */
     @Transactional
     public void requestPasswordReset(String email) {
-        log.debug("Demande de réinitialisation de mot de passe pour: {}", email);
-
         AppUser user = userRepository.findByEmail(email).orElse(null);
-
-        // Pour des raisons de sécurité, on ne révèle pas si l'email existe
-        if (user == null) {
-            log.debug("Email non trouvé (comportement normal): {}", email);
-            return;
-        }
-
-        if (!user.isAccountActivated()) {
-            log.warn("Tentative de réinitialisation sur compte non activé: {}", email);
-            return;
-        }
-
-        if (!user.isEnabled()) {
-            log.warn("Tentative de réinitialisation sur compte désactivé: {}", email);
-            return;
-        }
-
-        generatePasswordResetToken(user);
-        sendPasswordResetEmail(user);
-
-        log.info("Demande de réinitialisation traitée pour: {}", email);
-    }
-
-    /**
-     * Génère un token de réinitialisation de mot de passe
-     */
-    private void generatePasswordResetToken(AppUser user) {
-        String resetToken = generateActivationToken();
-        user.setActivationToken(resetToken);
+        if (user == null || !user.isAccountActivated() || !user.isEnabled()) return;
+        user.setActivationToken(generateActivationToken());
         user.setActivationTokenExpiry(Instant.now().plus(PASSWORD_RESET_TOKEN_EXPIRY_HOURS, ChronoUnit.HOURS));
-
         userRepository.save(user);
-    }
-
-    /**
-     * Envoie l'email de réinitialisation
-     */
-    private void sendPasswordResetEmail(AppUser user) {
         try {
-            emailService.sendPasswordResetEmail(
-                    user.getEmail(),
-                    user.getUsername(),
-                    user.getActivationToken()
-            );
-            log.debug("Email de réinitialisation envoyé à: {}", user.getEmail());
+            emailService.sendPasswordResetEmail(user.getEmail(), user.getUsername(), user.getActivationToken());
         } catch (Exception e) {
-            log.error("Erreur lors de l'envoi de l'email de réinitialisation à {}: {}",
-                    user.getEmail(), e.getMessage(), e);
+            log.error("Erreur envoi email reset: {}", e.getMessage());
         }
     }
 
-    /**
-     * Réinitialise le mot de passe avec un token
-     */
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {
-        log.debug("Tentative de réinitialisation de mot de passe avec token: {}",
-                maskToken(request.getToken()));
-
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             throw new IllegalArgumentException("Les mots de passe ne correspondent pas.");
         }
-
         AppUser user = userRepository.findByActivationToken(request.getToken())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Le lien de réinitialisation est invalide ou a expiré."
-                ));
-
-        validateResetToken(user);
-        updateUserPassword(user, request.getPassword());
-
-        log.info("Mot de passe réinitialisé avec succès pour: {}", user.getEmail());
-    }
-
-    /**
-     * Valide le token de réinitialisation
-     */
-    private void validateResetToken(AppUser user) {
+                .orElseThrow(() -> new IllegalArgumentException("Lien invalide ou expiré."));
         if (user.getActivationTokenExpiry().isBefore(Instant.now())) {
-            log.warn("Token de réinitialisation expiré pour: {}", user.getEmail());
-            throw new IllegalStateException("Le lien de réinitialisation a expiré.");
+            throw new IllegalStateException("Lien expiré.");
         }
-
-        if (!user.isAccountActivated()) {
-            log.warn("Tentative de réinitialisation sur compte non activé: {}", user.getEmail());
-            throw new IllegalStateException("Ce compte n'est pas activé.");
-        }
-    }
-
-    /**
-     * Met à jour le mot de passe de l'utilisateur
-     */
-    private void updateUserPassword(AppUser user, String newPassword) {
-        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setActivationToken(null);
         user.setActivationTokenExpiry(null);
         user.setMustChangePassword(false);
-
         userRepository.save(user);
     }
 
-    /**
-     * Génère un token d'activation/réinitialisation
-     */
     private String generateActivationToken() {
         return UUID.randomUUID().toString();
     }
 
-    /**
-     * Masque partiellement un token pour les logs
-     */
     private String maskToken(String token) {
-        if (token == null || token.length() < 8) {
-            return "***";
-        }
+        if (token == null || token.length() < 8) return "***";
         return token.substring(0, 4) + "..." + token.substring(token.length() - 4);
     }
 }

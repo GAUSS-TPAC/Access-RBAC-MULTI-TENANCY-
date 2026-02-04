@@ -1,25 +1,10 @@
 package com.yow.access.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.time.Instant;
 import java.util.UUID;
 
-/**
- * Entity representing a hierarchical resource within a tenant scope.
- *
- * Author: Alan Tchapda
- * Date: 2025-12-30
- */
 @Entity
-@Getter
-@Setter
-@Builder
-@AllArgsConstructor
 @Table(name = "resource")
 public class Resource {
 
@@ -28,7 +13,7 @@ public class Resource {
     @Column(name = "id", columnDefinition = "uuid", updatable = false, nullable = false)
     private UUID id;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id", nullable = false)
     private Tenant tenant;
 
@@ -39,75 +24,29 @@ public class Resource {
     @Column(name = "type", nullable = false, length = 50)
     private String type;
 
-    @Column(name = "name", nullable = false, length = 150)
+    @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Column(name = "path", length = 500)
+    @Column(name = "path", nullable = false, length = 500)
     private String path;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
-    // JPA only
-    public Resource() {
-    }
+    public Resource() {}
 
-    // Getters & Setters
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public Tenant getTenant() {
-        return tenant;
-    }
-
-    public void setTenant(Tenant tenant) {
-        this.tenant = tenant;
-    }
-
-    public Resource getParent() {
-        return parent;
-    }
-
-    public void setParent(Resource parent) {
-        this.parent = parent;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
-    }
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+    public Tenant getTenant() { return tenant; }
+    public void setTenant(Tenant tenant) { this.tenant = tenant; }
+    public Resource getParent() { return parent; }
+    public void setParent(Resource parent) { this.parent = parent; }
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getPath() { return path; }
+    public void setPath(String path) { this.path = path; }
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 }
-

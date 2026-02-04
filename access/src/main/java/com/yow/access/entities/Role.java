@@ -1,23 +1,10 @@
 package com.yow.access.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Entity representing a security role.
- *
- * Roles are static and predefined.
- *
- * Author: Alan Tchapda
- * Date: 2025-12-30
- */
 @Entity
-@Builder
-@AllArgsConstructor
 @Table(name = "role")
 public class Role {
 
@@ -31,7 +18,7 @@ public class Role {
     @Column(name = "scope", nullable = false, length = 20)
     private String scope;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "role_permission",
             joinColumns = @JoinColumn(name = "role_id"),
@@ -39,38 +26,14 @@ public class Role {
     )
     private Set<Permission> permissions = new HashSet<>();
 
-    // JPA only
-    public Role() {
-    }
+    public Role() {}
 
-    // Getters & Setters
-
-    public Short getId() {
-        return id;
-    }
-
-    public void setId(Short id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getScope() {
-        return scope;
-    }
-
-    public void setScope(String scope) {
-        this.scope = scope;
-    }
-
-    public Set<Permission> getPermissions() {
-        return permissions;
-    }
+    public Short getId() { return id; }
+    public void setId(Short id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getScope() { return scope; }
+    public void setScope(String scope) { this.scope = scope; }
+    public Set<Permission> getPermissions() { return permissions; }
+    public void setPermissions(Set<Permission> permissions) { this.permissions = permissions; }
 }
-

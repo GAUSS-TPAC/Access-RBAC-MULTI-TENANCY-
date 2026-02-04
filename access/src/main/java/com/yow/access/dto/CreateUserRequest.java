@@ -2,9 +2,7 @@ package com.yow.access.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
 
-@AllArgsConstructor
 public class CreateUserRequest {
 
     @NotBlank(message = "Username is required")
