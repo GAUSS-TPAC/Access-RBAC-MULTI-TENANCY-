@@ -5,60 +5,41 @@ import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Composite primary key for UserRoleResource.
- *
- * Author: Alan Tchapda
- * Date: 2025-12-30
- */
-
 @Embeddable
 public class UserRoleResourceId implements Serializable {
 
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id")
     private UUID userId;
 
-    @Column(name = "role_id", nullable = false)
+    @Column(name = "role_id")
     private Short roleId;
 
-    @Column(name = "resource_id", nullable = false)
+    @Column(name = "resource_id")
     private UUID resourceId;
 
-    protected UserRoleResourceId() {
-    }
+    public UserRoleResourceId() {}
 
-    public UUID getUserId() {
-        return userId;
-    }
-
-    public void setUserId(UUID userId) {
+    public UserRoleResourceId(UUID userId, Short roleId, UUID resourceId) {
         this.userId = userId;
-    }
-
-    public Short getRoleId() {
-        return roleId;
-    }
-
-    public void setRoleId(Short roleId) {
         this.roleId = roleId;
-    }
-
-    public UUID getResourceId() {
-        return resourceId;
-    }
-
-    public void setResourceId(UUID resourceId) {
         this.resourceId = resourceId;
     }
+
+    public UUID getUserId() { return userId; }
+    public void setUserId(UUID userId) { this.userId = userId; }
+    public Short getRoleId() { return roleId; }
+    public void setRoleId(Short roleId) { this.roleId = roleId; }
+    public UUID getResourceId() { return resourceId; }
+    public void setResourceId(UUID resourceId) { this.resourceId = resourceId; }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof UserRoleResourceId)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
         UserRoleResourceId that = (UserRoleResourceId) o;
-        return Objects.equals(userId, that.userId)
-                && Objects.equals(roleId, that.roleId)
-                && Objects.equals(resourceId, that.resourceId);
+        return Objects.equals(userId, that.userId) &&
+                Objects.equals(roleId, that.roleId) &&
+                Objects.equals(resourceId, that.resourceId);
     }
 
     @Override
@@ -66,4 +47,3 @@ public class UserRoleResourceId implements Serializable {
         return Objects.hash(userId, roleId, resourceId);
     }
 }
-

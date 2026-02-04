@@ -1,15 +1,8 @@
 package com.yow.access.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.util.List;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class CreateRoleRequest {
 
     @NotBlank(message = "Role name is required")
@@ -17,5 +10,14 @@ public class CreateRoleRequest {
 
     private String scope; // "GLOBAL" or "TENANT"
 
-    private List<Short> permissionIds; // IDs des permissions à assigner
+    private List<Short> permissionIds;
+
+    public CreateRoleRequest() {}
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getScope() { return scope; }
+    public void setScope(String scope) { this.scope = scope; }
+    public List<Short> getPermissionIds() { return permissionIds; }
+    public void setPermissionIds(List<Short> permissionIds) { this.permissionIds = permissionIds; }
 }

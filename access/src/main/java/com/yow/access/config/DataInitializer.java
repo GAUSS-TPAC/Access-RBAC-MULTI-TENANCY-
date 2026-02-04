@@ -2,7 +2,8 @@ package com.yow.access.config;
 
 import com.yow.access.entities.AppUser;
 import com.yow.access.repositories.UserRepository;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
@@ -13,15 +14,19 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.List;
 
-@Slf4j
 @Component
 @Order(1)
 @Transactional
 public class DataInitializer implements CommandLineRunner {
 
+    private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
+
     private final UserRepository userRepository;
     private final com.yow.access.repositories.RoleRepository roleRepository;
     private final com.yow.access.repositories.PermissionRepository permissionRepository;
+    private final com.yow.access.repositories.ResourceRepository resourceRepository;
+    private final com.yow.access.repositories.UserRoleResourceRepository urrRepository;
+    private final com.yow.access.repositories.TenantRepository tenantRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -29,11 +34,17 @@ public class DataInitializer implements CommandLineRunner {
             UserRepository userRepository,
             com.yow.access.repositories.RoleRepository roleRepository,
             com.yow.access.repositories.PermissionRepository permissionRepository,
+            com.yow.access.repositories.ResourceRepository resourceRepository,
+            com.yow.access.repositories.UserRoleResourceRepository urrRepository,
+            com.yow.access.repositories.TenantRepository tenantRepository,
             PasswordEncoder passwordEncoder
     ) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.permissionRepository = permissionRepository;
+        this.resourceRepository = resourceRepository;
+        this.urrRepository = urrRepository;
+        this.tenantRepository = tenantRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -136,10 +147,25 @@ public class DataInitializer implements CommandLineRunner {
 
             userRepository.save(admin);
 
-            log.info("✅ Utilisateur admin créé:");
-            log.info("   Email: {}", adminEmail);
-            log.info("   Username: {}", adminUsername);
-            log.info("   Mot de passe: Admin123!");
+            // Créer un tenant système pour l'admin global
+            com.yow.access.entities.Tenant systemTenant = new com.yow.access.entities.Tenant();
+            systemTenant.setName("System");
+            systemTenant.setCode("SYSTEM");
+            systemTenant.setStatus("ACTIVE");
+            tenantRepository.save(systemTenant);
+
+            // Créer une ressource système racine
+            com.yow.access.entities.Resource systemRoot = com.yow.access.entities.ResourceFactory.createRootResource(systemTenant, "System Group");
+            resourceRepository.save(systemRoot);
+
+            // Assigner le rôle ADMIN à l'utilisateur admin sur la ressource système
+            com.yow.access.entities.Role adminRole = roleRepository.findByName("ADMIN")
+                    .orElseThrow(() -> new IllegalStateException("Rôle ADMIN non trouvé."));
+            
+            com.yow.access.entities.UserRoleResource urr = com.yow.access.entities.UserRoleResourceFactory.create(admin, adminRole, systemRoot);
+            urrRepository.save(urr);
+
+            log.info("✅ Utilisateur Super Admin créé avec accès complet au système.");
         } else {
             log.info("ℹ️  L'utilisateur admin existe déjà: {}", adminEmail);
         }

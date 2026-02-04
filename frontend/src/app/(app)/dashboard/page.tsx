@@ -29,13 +29,11 @@ export default function DashboardPage() {
     );
   }
 
-  const isSuperAdmin = email === 'admin@example.com';
-
-  if (isSuperAdmin) {
+  if (role === 'super_admin') {
     return <SuperAdminDashboard />;
   }
 
-  if (role === 'admin') {
+  if (role === 'tenant_admin') {
     return <TenantAdminDashboard />;
   }
 
