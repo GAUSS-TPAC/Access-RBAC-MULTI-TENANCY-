@@ -77,9 +77,12 @@ public class AuthorizationService {
         }
 
         List<UserRoleResource> bindings = urrRepository.findAllByUserId(userId);
+        System.out.println("DEBUG: Check Permission '" + permissionName + "' for User " + userId + " on Resource " + target.getName() + " (" + target.getId() + ")");
+        System.out.println("DEBUG: Found " + bindings.size() + " bindings for user.");
 
         // No bindings = no permissions
         if (bindings == null || bindings.isEmpty()) {
+            System.out.println("DEBUG: No bindings found. Access denied.");
             return false;
         }
 
@@ -88,6 +91,7 @@ public class AuthorizationService {
         // ADMIN role has full access.
         for (UserRoleResource urr : bindings) {
             if (urr.getRole().getName().equals("ADMIN")) {
+                System.out.println("DEBUG: ADMIN role found. Access granted.");
                 return true;
             }
         }
@@ -97,8 +101,10 @@ public class AuthorizationService {
 
         // Walk up the resource hierarchy
         while (current != null) {
+            System.out.println("DEBUG: Checking at resource level: " + current.getName() + " (" + current.getId() + ")");
             // Detect and break circular references
             if (visitedResources.contains(current.getId())) {
+                System.out.println("DEBUG: Circular reference detected.");
                 break; // Circular reference detected
             }
             visitedResources.add(current.getId());
@@ -109,6 +115,11 @@ public class AuthorizationService {
                 if (!urr.getResource().getId().equals(current.getId())) {
                     continue;
                 }
+                
+                System.out.println("DEBUG: Matching resource binding found. Role: " + urr.getRole().getName());
+                
+                // Debug permissions
+                urr.getRole().getPermissions().forEach(p -> System.out.println("DEBUG:   - Has permission: " + p.getName()));
 
                 // Check if role has the required permission
                 boolean hasPermission = urr.getRole().getPermissions()
@@ -116,14 +127,21 @@ public class AuthorizationService {
                         .anyMatch(p -> p.getName().equals(permissionName));
 
                 if (hasPermission) {
+                    System.out.println("DEBUG: Permission MATCHED! Access granted.");
                     return true; // Permission granted
                 }
             }
 
             // Move up to parent resource
             current = current.getParent();
+            if (current != null) {
+                System.out.println("DEBUG: Moving up to parent: " + current.getName());
+            } else {
+                System.out.println("DEBUG: No parent (Root reached).");
+            }
         }
-
+        
+        System.out.println("DEBUG: End of hierarchy reached. Access denied.");
         return false; // No matching permission found in hierarchy
     }
 }

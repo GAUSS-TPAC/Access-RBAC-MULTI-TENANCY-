@@ -17,6 +17,7 @@ public class UserService {
     private final UserRoleResourceRepository urrRepository;
     private final AuthorizationService authorizationService;
     private final AuditLogService auditLogService;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     public UserService(
             UserRepository userRepository,
@@ -24,7 +25,8 @@ public class UserService {
             ResourceRepository resourceRepository,
             UserRoleResourceRepository urrRepository,
             AuthorizationService authorizationService,
-            AuditLogService auditLogService
+            AuditLogService auditLogService,
+            org.springframework.security.crypto.password.PasswordEncoder passwordEncoder
     ) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
@@ -32,22 +34,27 @@ public class UserService {
         this.urrRepository = urrRepository;
         this.authorizationService = authorizationService;
         this.auditLogService = auditLogService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /* ============================
        CREATE USER
        ============================ */
+    /* ============================
+       CREATE USER (DIRECT ACTIVE)
+       ============================ */
     @Transactional
     public AppUser createUser(
             String username,
             String email,
-            String passwordHash
+            String rawPassword
     ) {
         AppUser user = new AppUser();
         user.setUsername(username);
         user.setEmail(email);
-        user.setPasswordHash(passwordHash);
+        user.setPasswordHash(passwordEncoder.encode(rawPassword));
         user.setEnabled(true);
+        user.setAccountActivated(true); // Direct activation
 
         return userRepository.save(user);
     }

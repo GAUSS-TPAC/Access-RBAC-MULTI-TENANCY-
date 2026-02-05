@@ -4,6 +4,8 @@ import com.yow.access.config.security.context.AuthenticatedUserContext;
 import com.yow.access.dto.AssignRoleRequest;
 import com.yow.access.dto.CreateUserRequest;
 import com.yow.access.entities.AppUser;
+import com.yow.access.repositories.UserRepository;
+import com.yow.access.services.AuthService;
 import com.yow.access.services.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -17,28 +19,38 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
+    private final AuthService authService;
+    private final UserRepository userRepository;
     private final AuthenticatedUserContext userContext;
 
     public UserController(
             UserService userService,
+            AuthService authService,
+            UserRepository userRepository,
             AuthenticatedUserContext userContext
     ) {
         this.userService = userService;
+        this.authService = authService;
+        this.userRepository = userRepository;
         this.userContext = userContext;
     }
 
     /* ============================
-       CREATE USER
+       CREATE USER (DIRECT ACTIVE)
        ============================ */
     @PostMapping
     public ResponseEntity<AppUser> createUser(
             @Valid @RequestBody CreateUserRequest request
     ) {
+        // Validation: Check if requestor exists (optional security check)
+        // UUID creatorId = userContext.getUserId();
+
+        // Use UserService directly to create Active user with provided password
         AppUser user =
                 userService.createUser(
                         request.getUsername(),
                         request.getEmail(),
-                        request.getPasswordHash()
+                        request.getPasswordHash() // This is the raw password from request
                 );
 
         return ResponseEntity

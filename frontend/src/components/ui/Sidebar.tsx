@@ -35,11 +35,10 @@ export default function Sidebar() {
           <li>
             <Link
               href="/dashboard"
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
-                isActive('/dashboard')
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${isActive('/dashboard')
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800'
-              }`}
+                }`}
             >
               <Home className="h-5 w-5" />
               <span className="text-sm font-medium">Tableau de bord</span>
@@ -50,11 +49,10 @@ export default function Sidebar() {
             <li>
               <Link
                 href="/tenants"
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
-                  isActive('/tenants')
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${isActive('/tenants')
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
                     : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                }`}
+                  }`}
               >
                 <Building2 className="h-5 w-5" />
                 <span className="text-sm font-medium">Organisations</span>
@@ -67,11 +65,10 @@ export default function Sidebar() {
               <li>
                 <Link
                   href="/departments"
-                  className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
-                    isActive('/departments')
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${isActive('/departments')
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
                       : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                  }`}
+                    }`}
                 >
                   <Building2 className="h-5 w-5" />
                   <span className="text-sm font-medium">Départements</span>
@@ -81,11 +78,10 @@ export default function Sidebar() {
               <li>
                 <Link
                   href="/users"
-                  className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
-                    isActive('/users')
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${isActive('/users')
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
                       : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                  }`}
+                    }`}
                 >
                   <Users className="h-5 w-5" />
                   <span className="text-sm font-medium">Utilisateurs</span>
@@ -95,11 +91,10 @@ export default function Sidebar() {
               <li>
                 <Link
                   href="/roles"
-                  className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
-                    isActive('/roles')
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${isActive('/roles')
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
                       : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                  }`}
+                    }`}
                 >
                   <Shield className="h-5 w-5" />
                   <span className="text-sm font-medium">Rôles</span>
@@ -111,11 +106,10 @@ export default function Sidebar() {
           <li>
             <Link
               href="/audit-logs"
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
-                isActive('/audit-logs')
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${isActive('/audit-logs')
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800'
-              }`}
+                }`}
             >
               <Activity className="h-5 w-5" />
               <span className="text-sm font-medium">Audit Logs</span>
@@ -125,11 +119,10 @@ export default function Sidebar() {
           <li>
             <Link
               href="/settings"
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
-                isActive('/settings')
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${isActive('/settings')
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800'
-              }`}
+                }`}
             >
               <Settings className="h-5 w-5" />
               <span className="text-sm font-medium">Paramètres</span>
