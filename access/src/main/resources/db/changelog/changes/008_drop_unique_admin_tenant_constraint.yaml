@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - changeSet:
+      id: 008-drop-unique-admin-tenant-constraint
+      author: antigravity
+      changes:
+        - sql:
+            sql: DROP INDEX IF EXISTS uq_one_admin_tenant;
