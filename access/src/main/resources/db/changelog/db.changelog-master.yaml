@@ -13,3 +13,5 @@ databaseChangeLog:
       file: db/changelog/changes/007_add_assigned_at_user_role_resource.yaml
   - include:
       file: db/changelog/changes/008_drop_unique_admin_tenant_constraint.yaml
+  - include:
+      file: db/changelog/changes/009_add_tenant_id_to_role.yaml

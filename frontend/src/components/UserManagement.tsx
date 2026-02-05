@@ -76,12 +76,13 @@ export default function UserManagement({ tenantId }: UserManagementProps) {
             setLoading(true);
             const [usersRes, rolesRes, resourcesRes] = await Promise.all([
                 api.get<User[]>(`/api/users/tenant/${tenantId}`),
-                api.get<Role[]>('/api/roles'),
+                api.get<Role[]>(`/api/roles?tenantId=${tenantId}`),
                 api.get<any[]>(`/api/resources/tenant/${tenantId}`)
             ]);
 
             setUsers(usersRes.data);
-            setRoles(rolesRes.data);
+            // Filter out SUPER_ADMIN role (id 1) for tenant dashboard
+            setRoles(rolesRes.data.filter(r => r.name !== 'SUPER_ADMIN'));
 
             // Assume first resource is root
             if (resourcesRes.data.length > 0) {
