@@ -25,12 +25,14 @@ interface CreateRoleModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onRoleCreated?: () => void;
+  tenantId?: string | null;
 }
 
 export default function CreateRoleModal({
   open,
   onOpenChange,
   onRoleCreated,
+  tenantId
 }: CreateRoleModalProps) {
   const [roleName, setRoleName] = useState('');
   const [scope, setScope] = useState<'GLOBAL' | 'TENANT'>('TENANT');
@@ -42,8 +44,12 @@ export default function CreateRoleModal({
   useEffect(() => {
     if (open) {
       fetchPermissions();
+      // If tenantId is present, force TENANT scope
+      if (tenantId) {
+        setScope('TENANT');
+      }
     }
-  }, [open]);
+  }, [open, tenantId]);
 
   async function fetchPermissions() {
     try {
@@ -77,6 +83,7 @@ export default function CreateRoleModal({
         name: roleName,
         scope: scope,
         permissionIds: selectedPermissions,
+        tenantId: tenantId // Pass tenantId derived from context
       });
 
       // Reset form
@@ -116,33 +123,38 @@ export default function CreateRoleModal({
           </div>
 
           {/* Scope */}
-          <div className="space-y-2">
-            <Label>Portée du rôle</Label>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="scope"
-                  value="TENANT"
-                  checked={scope === 'TENANT'}
-                  onChange={() => setScope('TENANT')}
-                  className="w-4 h-4"
-                />
-                <span>Tenant (Organisation)</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="scope"
-                  value="GLOBAL"
-                  checked={scope === 'GLOBAL'}
-                  onChange={() => setScope('GLOBAL')}
-                  className="w-4 h-4"
-                />
-                <span>Global (Système)</span>
-              </label>
+          {/* Scope - Only show if NO tenantId (Super Admin) implies Global vs Tenant choice? 
+              Actually if tenantId is present, we force Tenant scope so hide this. 
+          */}
+          {!tenantId && (
+            <div className="space-y-2">
+              <Label>Portée du rôle</Label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="scope"
+                    value="TENANT"
+                    checked={scope === 'TENANT'}
+                    onChange={() => setScope('TENANT')}
+                    className="w-4 h-4"
+                  />
+                  <span>Tenant (Organisation)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="scope"
+                    value="GLOBAL"
+                    checked={scope === 'GLOBAL'}
+                    onChange={() => setScope('GLOBAL')}
+                    className="w-4 h-4"
+                  />
+                  <span>Global (Système)</span>
+                </label>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Permissions */}
           <div className="space-y-2">

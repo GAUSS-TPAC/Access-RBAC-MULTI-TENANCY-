@@ -26,14 +26,35 @@ export default function RolesPage() {
   const [loading, setLoading] = useState(true);
   const [createRoleModalOpen, setCreateRoleModalOpen] = useState(false);
 
+  const [tenantId, setTenantId] = useState<string | null>(null);
+
   useEffect(() => {
-    fetchRolesAndPermissions();
+    // Determine scope based on user connectivity
+    // Logic: Fetch tenants. If user has tenants, use the first one as context (similar to dashboard).
+    // If user is super admin (no tenants or special case), tenantId stays null.
+    // For now, let's try to fetch tenants.
+    fetchContextAndRoles();
   }, []);
 
-  async function fetchRolesAndPermissions() {
+  async function fetchContextAndRoles() {
     try {
       setLoading(true);
-      const rolesResponse = await api.get<Role[]>('/api/roles');
+
+      // Attempt to get tenants
+      let currentTenantId: string | null = null;
+      try {
+        const tenantsRes = await api.get<any[]>('/api/tenants');
+        if (tenantsRes.data && tenantsRes.data.length > 0) {
+          currentTenantId = tenantsRes.data[0].id;
+          setTenantId(currentTenantId);
+        }
+      } catch (e) {
+        // Ignore error, maybe super admin or no tenants
+        console.log("Not a tenant admin or no tenants found");
+      }
+
+      const url = currentTenantId ? `/api/roles?tenantId=${currentTenantId}` : '/api/roles';
+      const rolesResponse = await api.get<Role[]>(url);
       setRoles(rolesResponse.data);
 
       // Extraire toutes les permissions uniques de tous les rôles
@@ -233,7 +254,8 @@ export default function RolesPage() {
       <CreateRoleModal
         open={createRoleModalOpen}
         onOpenChange={setCreateRoleModalOpen}
-        onRoleCreated={fetchRolesAndPermissions}
+        onRoleCreated={fetchContextAndRoles}
+        tenantId={tenantId}
       />
     </div>
   );

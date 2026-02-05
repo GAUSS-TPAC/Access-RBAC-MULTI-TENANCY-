@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: 009-add-tenant-id-to-role
+      author: yow-access
+      changes:
+        - addColumn:
+            tableName: role
+            columns:
+              - column:
+                  name: tenant_id
+                  type: uuid
+                  constraints:
+                    foreignKeyName: fk_role_tenant
+                    references: tenant(id)
+        - dropUniqueConstraint:
+            tableName: role
+            constraintName: role_name_key
+            uniqueColumns: name

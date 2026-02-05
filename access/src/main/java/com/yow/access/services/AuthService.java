@@ -64,12 +64,32 @@ public class AuthService {
     public AuthResponse registerTenant(RegisterTenantRequest request) {
         log.debug("Enregistrement d'un nouveau tenant: {}", request.getOrganizationName());
 
-        // 1. Vérifications préalables
+        // 1. Gestion de l'utilisateur Admin
+        AppUser adminUser;
+        boolean isNewUser = false;
+
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Un utilisateur avec cet email existe déjà.");
+            // Utilisateur existant : on vérifie son mot de passe
+            adminUser = userRepository.findByEmail(request.getEmail()).orElseThrow();
+            if (!passwordEncoder.matches(request.getPassword(), adminUser.getPasswordHash())) {
+                throw new IllegalArgumentException("Cet email existe déjà. Si c'est votre compte, le mot de passe est incorrect.");
+            }
+            log.info("Utilisateur existant '{}' deviendra admin du nouveau tenant.", adminUser.getEmail());
+        } else {
+            // Nouvel utilisateur
+            adminUser = new AppUser();
+            adminUser.setUsername(request.getEmail()); // Username par défaut = email
+            adminUser.setEmail(request.getEmail());
+            adminUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+            adminUser.setEnabled(true);
+            adminUser.setAccountActivated(true);
+            adminUser.setMustChangePassword(false);
+            adminUser.setCreatedAt(Instant.now());
+            userRepository.save(adminUser);
+            isNewUser = true;
         }
 
-        // On génère un code unique pour le tenant basé sur le nom
+        // 2. Génération du code Tenant unique
         String tenantCode = request.getOrganizationName().toUpperCase().replaceAll("[^A-Z0-9]", "_");
         if (tenantCode.length() > 20) tenantCode = tenantCode.substring(0, 20);
         
@@ -79,18 +99,6 @@ public class AuthService {
             tenantCode = originalCode + "_" + suffix++;
         }
 
-        // 2. Création de l'utilisateur Admin
-        AppUser adminUser = new AppUser();
-        adminUser.setUsername(request.getEmail());
-        adminUser.setEmail(request.getEmail());
-        adminUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        adminUser.setEnabled(true);
-        adminUser.setAccountActivated(true);
-        adminUser.setMustChangePassword(false);
-        adminUser.setCreatedAt(Instant.now());
-        
-        userRepository.save(adminUser);
-
         // 3. Création du Tenant
         com.yow.access.entities.Tenant tenant = new com.yow.access.entities.Tenant();
         tenant.setName(request.getOrganizationName());
@@ -99,7 +107,7 @@ public class AuthService {
         
         tenantRepository.save(tenant);
 
-        // 4. Création de la Ressource Racine (Département Principal)
+        // 4. Création de la Ressource Racine
         com.yow.access.entities.Resource rootResource = com.yow.access.entities.ResourceFactory.createRootResource(tenant, request.getOrganizationName());
         resourceRepository.save(rootResource);
 
@@ -107,22 +115,34 @@ public class AuthService {
         com.yow.access.entities.Role adminRole = roleRepository.findByName("TENANT_ADMIN")
                 .orElseThrow(() -> new IllegalStateException("Le rôle TENANT_ADMIN est introuvable en base."));
 
+        // Vérifier si l'utilisateur a déjà ce rôle sur CETTE ressource (peu probable car nouvelle, mais bon réflexe)
+        // Ici c'est une nouvelle ressource donc pas de doublon possible.
         com.yow.access.entities.UserRoleResource urr = com.yow.access.entities.UserRoleResourceFactory.create(adminUser, adminRole, rootResource);
         userRoleResourceRepository.save(urr);
 
         // 6. Génération Token et Réponse
-        List<String> roles = Collections.singletonList("TENANT_ADMIN");
-        String token = jwtService.generateToken(adminUser.getId(), adminUser.getEmail(), roles);
+        // On récupère TOUS les rôles de l'utilisateur (y compris ceux d'autres tenants s'il en a)
+        // Ou juste le rôle actuel ? Pour l'instant on renvoie juste TENANT_ADMIN comme indiqué
+        // Mais pour la cohérence, mieux vaut renvoyer ce qu'il a.
+        // Simplification : on renvoie la liste contenant au moins TENANT_ADMIN.
+        List<String> roles = userRoleResourceRepository.findAllByUserId(adminUser.getId())
+                .stream()
+                .map(u -> u.getRole().getName())
+                .distinct()
+                .collect(Collectors.toList());
+        
+        // Si la liste est vide (ce qui ne devrait pas arriver juste après l'insertion), on force
+        if (roles.isEmpty()) roles.add("TENANT_ADMIN");
 
         log.info("Tenant '{}' créé avec succès par {}", tenant.getName(), adminUser.getEmail());
 
         return AuthResponse.builder()
-                .token(token)
+                .token(jwtService.generateToken(adminUser.getId(), adminUser.getEmail(), roles))
                 .userId(adminUser.getId())
                 .email(adminUser.getEmail())
                 .username(adminUser.getUsername())
                 .roles(roles)
-                .mustChangePassword(false)
+                .mustChangePassword(adminUser.isMustChangePassword())
                 .build();
     }
 
